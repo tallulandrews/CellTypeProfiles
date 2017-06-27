@@ -1,0 +1,17 @@
+# CellTypeProfiles
+
+This is an R package for generating and comparing cell-type profiles from single-cell RNASeq data. 
+
+Includes :
+(1) Marker gene identification.
+(2) Calculating and normalizing cell-type profiles.
+(3) Matching cell-types across datasets.
+(4) Removal of dataset-specific effects
+(5) Multi-dataset comparison of cell-types.
+
+Installation :
+
+>require("devtools")
+>install_github('tallulandrews/CellTypeProfiles')
+
+Read More : 

@@ -1,0 +1,22 @@
+Package: CellTypeProfiles
+Version: 0.01.00
+Date: 2017-06-27
+Title: Compare Cell-Type Profiles
+Author: Tallulah Andrews <tallulandrews@gmail.com>
+Maintainer: Tallulah Andrews <tallulandrews@gmail.com>
+Depends: R (>= 3.3.0)
+Imports: RColorBrewer, pROC, heatmap3, permute, igraph, edgeR, grDevices, graphics, stats
+Suggests: knitr, M3Drop
+VignetteBuilder: knitr
+biocViews: RNASeq, Sequencing, Transcriptomics, GeneExpression, Software, FeatureExtraction
+Collate: General.R Markers.R Profiles.R
+Description: This package provides functions for generating and comparing cell-type profiles from single-cell RNASeq data.
+Including :
+(1) Marker gene identification.
+(2) Calculating and normalizing cell-type profiles.
+(3) Matching cell-types across datasets.
+(4) Removal of dataset-specific effects
+(5) Multi-dataset comparison of cell-types.
+URL: https://github.com/tallulandrews/CellTypeProfiles
+BugReports: https://github.com/tallulandrews/CellTypeProfiles/issues
+License: GPL (>=2)
