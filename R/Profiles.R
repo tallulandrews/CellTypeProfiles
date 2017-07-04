@@ -112,11 +112,19 @@ combine_and_match_clusters <- function(profile_list, features=NA){
 		consensus_genes <- consensus_genes[consensus_genes %in% rownames(profile_list[[i]])]	
 	}
 	# combine profiles
-	Combined <- profile_list[[1]][rownames(profile_list[[1]]) %in% consensus_genes,-dim(profile_list[[1]])[2]] 
+	# duplicate code
+	these_profiles <- as.matrix(profile_list[[1]][rownames(profile_list[[1]]) %in% consensus_genes,-dim(profile_list[[1]])[2]])
+	colnames(these_profiles) <- colnames(profile_list[[1]])[-dim(profile_list[[1]])[2]]
+	Combined <- these_profiles
 	Combined_features <- profile_list[[1]][rownames(profile_list[[1]]) %in% consensus_genes,dim(profile_list[[1]])[2]]
+	# end duplicate code
 	for (i in 2:length(profile_list)) {
-		Combined <- cbind(Combined, profile_list[[i]][rownames(profile_list[[i]]) %in% consensus_genes,-dim(profile_list[[i]])[2]])
+		# duplicate code
+		these_profiles <- as.matrix(profile_list[[i]][rownames(profile_list[[i]]) %in% consensus_genes,-dim(profile_list[[i]])[2]])
+		colnames(these_profiles) <- colnames(profile_list[[i]])[-dim(profile_list[[i]])[2]]
+		Combined <- cbind(Combined, these_profiles)
 		Combined_features <- cbind(Combined_features, profile_list[[i]][rownames(profile_list[[i]]) %in% consensus_genes,dim(profile_list[[i]])[2]])
+		#end duplicate code
 	}
 	colnames(Combined_features) <- names(profile_list)
 
@@ -165,7 +173,7 @@ glm_of_matches <- function(matches) { #This is not optimized
 			effects = c(0,glm(x~matches$dataset)$coef); # Do I force the intercept to be zero i.e. ~0+matches$dataset
 			return(effects)
 		}
-		batch_effects <- apply( matches$profiles, 1, calc_batch_effect)
+		batch_effects <- apply( matches$profiles, 1, calc_batch_effect_naive)
 		corrected <- all_matrix - t(batch_effects[all_effect,])
 	} else {
 		# Matched groups cover all batches
