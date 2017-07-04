@@ -50,8 +50,8 @@ get_reciprocal_hits <- function(profiles1, profiles2, features=NA) {
         }
         features1 = profiles1[,dim1[2]]
         features2 = profiles2[,dim2[2]]
-        profiles1 <- profiles1[,-dim1[2]]
-        profiles2 <- profiles2[,-dim2[2]]
+        profiles1 <- as.matrix(profiles1[,-dim1[2]])
+        profiles2 <- as.matrix(profiles2[,-dim2[2]])
 
         if (is.na(features)) { # throw warning when features is not NA
                 # feature of one or other dataset.
