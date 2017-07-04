@@ -35,6 +35,15 @@ complex_markers <- function (expr_mat, labels, n_max=1, strict_only = FALSE) {
 	label_columns <- sort(unique(labels));
         # Consider each gene a possible marker for top 1->n_max groups
         gene_auc <- function(g) {
+		# Short circuit for genes which invariant
+		if (sum(cluster_priority[g,] == cluster_priority[g,1]) == length(cluster_priority[g,])) {
+			group=rep(0, times=length(label_columns));
+                        pval=-1
+                        auc=-1
+			return(c(auc, group, pval))
+		}
+
+
 		# Get AUC + 95% CI for this gene in top n groups
                 get_auc_ci <- function(n) {
                         g_groups <- colnames(cluster_priority)[which(cluster_priority[g,] <= n)]
