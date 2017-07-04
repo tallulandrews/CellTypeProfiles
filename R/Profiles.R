@@ -255,6 +255,6 @@ cluster_profile_heatmap <- function(corrected_mat, matches, features_only=TRUE, 
 	
 	heatout <- heatmap.3(my_profiles, trace="n", scale="row", col=heatcols, symbreaks=TRUE, key.title="", key.xlab="Relative Expression", hclustfun=hclustfun, distfun=distfun, ColSideColors=as.matrix(ColumnCols), ColSideColorsSize=length(ColumnCols[1,]))
 
-	return(invisible(heatout), sig_groups = perm_signif, dist_mat=my_dists, dist_signif=my_dist_signif)
+	return(invisible(list(heatmap_out=heatout, sig_groups = perm_signif, dist_mat=my_dists, dist_signif=my_dist_signif)))
 }
 
