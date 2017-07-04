@@ -1,6 +1,6 @@
-factor_counts <- function(labels) {
-        labels <- factor(labels)
-        x <- split(seq(length(labels)), labels)
+factor_counts <- function(vec) {
+        vec <- factor(vec)
+        x <- split(seq(length(vec)), vec)
         result <- sapply(x, function(a) length(a))
         return(result);
 }
@@ -14,4 +14,4 @@ my_row_mean_aggregate <- function(mat, groups) {
         return(result);
 }
 
-cosine_dist <- function(x,y) {x %*% y / sqrt(x%*%x * y%*%y)}
+#cosine_dist <- function(x,y) {x %*% y / sqrt(x%*%x * y%*%y)}

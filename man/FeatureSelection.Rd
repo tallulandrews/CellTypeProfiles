@@ -3,6 +3,8 @@
 \alias{m3drop.features}
 \alias{no.feature.selection}
 \alias{marker.features}
+\alias{danb.features}
+\alias{hvg.features}
 \title{Calculate biological features for a dataset}
 \description{
 	Determines whether or not each gene is a relevant feature of the dataset, i.e. is responding to biological factors not just technical noise.

@@ -7,11 +7,8 @@ complex_markers <- function (expr_mat, labels, n_max=1, strict_only = FALSE) {
         if (n_max > (length(unique(labels))-1)) {
                 stop("n_max must be less than the number of labels");
         }
-	if (min(factor_counts(labels)) < 10) {
-		print("Warning: Small groups (n < 10) may bias marker gene results.")
-	}
 	# Remove groups with a single cell
-	label_counts = summary(factor(labels))
+	label_counts = factor_counts(labels)
 	exclude = names(label_counts)[label_counts<2]
 	if (length(exclude) > 0) {
 		warning(paste("Warning: Excluding",length(exclude),"groups with less than 2 samples."))
@@ -20,6 +17,9 @@ complex_markers <- function (expr_mat, labels, n_max=1, strict_only = FALSE) {
 		expr_mat <- expr_mat[,keep]
 		labels <- labels[keep]
 		labels <- factor(labels);
+	}
+	if (min(label_counts) < 10) {
+		print("Warning: Small groups (n < 10) may bias marker gene results.")
 	}
 
         # Mean ranked expression all genes, each cluster (efficient)
@@ -108,8 +108,6 @@ marker_heatmap <- function(marker_matrix, expr_mat, cell_colour_bars=NULL, min_A
 	#Get marker categories
 	Gene_assign <- get_combo_names(marker_matrix)
 
-
-
 	other_cats <- factor_counts(Gene_assign) < min_cat_size
 	Gene_assign[Gene_assign %in% names(other_cats[other_cats])] <- "Other"
 
@@ -138,5 +136,5 @@ marker_heatmap <- function(marker_matrix, expr_mat, cell_colour_bars=NULL, min_A
                         hclustfun=function(x){hclust(x, method="ward.D2")})
 
 	names(gene_colour_palette) = levels(gene_colour_bar)
-	return(list(legend=gene_colour_palette, gene_assignments=Gene_assign));
+	invisible(list(legend=gene_colour_palette, gene_assignments=Gene_assign));
 }

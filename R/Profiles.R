@@ -1,5 +1,6 @@
 # Generalizable - Step 1 = Get profiles
 get_cluster_profile <- function(expr_mat, clusters, norm_method="CPM", is.log=FALSE, out.log=2, feature_selection=kw.features) {
+	if (min(factor_counts(clusters)) < 2) {stop("Error: Cannot have a cell-type with a single sample.")}
 	# is.log should hold the base of the log if it has been log-transformed.
 	# If no norm here, need at least FS!
 	if (is.log) {
@@ -69,9 +70,9 @@ get_reciprocal_hits <- function(profiles1, profiles2, features=NA) {
         recip = which(1:length(matches1) == matches2[matches1])
         recip_table = cbind(recip,matches1[recip])
         colnames(recip_table) = c("profiles1", "profiles2")
-        match_table = cbind(matches1, matches2)
-        colnames(match_table) = c("profiles1->profiles2", "profiles2->profiles1")
-        return(list(matches=match_table, recip=recip_table))
+#        match_table = cbind(matches1, matches2) # not necessarily of equal length
+#        colnames(match_table) = c("profiles1->profiles2", "profiles2->profiles1")
+        return(list(matches1=matches1, matches2=matches2, recip=recip_table))
 }
 
 combine_and_match_clusters <- function(profile_list, features=NA){
@@ -148,8 +149,10 @@ glm_of_matches <- function(matches) { #This is not optimized
 	batch_lvl = levels(factor(matches$dataset))
 	type_lvl = levels(factor(matched_type))
 	all_matrix <- matches$profiles
-	if (length(unique(matched_batch)) < length(unique(matches$dataset))) {
+	if (length(unique(matched_batch)) < length(unique(matches$dataset))
+		& length(factor_counts(matches$labels)) > 1) {
 		# Insufficient matched groups
+		# and Not all groups matched to a single group
 		effect_vec = rep(1, times=length(matched_batch));
 		all_effect <- rep(1, times=length(matches$dataset))
 
@@ -162,7 +165,7 @@ glm_of_matches <- function(matches) { #This is not optimized
 			effects = c(0,glm(x~matches$dataset)$coef); # Do I force the intercept to be zero i.e. ~0+matches$dataset
 			return(effects)
 		}
-		batch_effcts <- apply( matches$profiles, 1, calc_batch_effect)
+		batch_effects <- apply( matches$profiles, 1, calc_batch_effect)
 		corrected <- all_matrix - t(batch_effects[all_effect,])
 	} else {
 		# Matched groups cover all batches
@@ -177,15 +180,15 @@ glm_of_matches <- function(matches) { #This is not optimized
 			effects = c(0,glm(x~matched_type+matched_batch)$coef); # Do I force the intercept to be zero i.e. ~0+matched_type+matched_batch
 			return(effects)
 		}
-		batch_effcts <- apply(matched_matrix, 1, calc_batch_effect)
+		batch_effects <- apply(matched_matrix, 1, calc_batch_effect)
 		corrected <- all_matrix - t(batch_effects[all_effect,])
 	}
-	return(corrected)
+	return(list(corrected_mat=corrected, model_effects=batch_effects))
 }
 
 # Generalizable - Step 5 = Cluster corrected profiles
 #		& Step 6 = Calculate meta-profiles
-general_cluster_profiles <- function(corrected_mat, matches, features_only=TRUE, npermute=0, distfun=function(x){as.dist(1-cor(t(x), method="spearman"))}, hclustfun=function(x){hclust(x,method="complete")}, ann=NULL) {
+cluster_profile_heatmap <- function(corrected_mat, matches, features_only=TRUE, npermute=0, distfun=function(x){as.dist(1-cor(t(x), method="spearman"))}, hclustfun=function(x){hclust(x,method="complete")}, ann=NULL) {
 	#source("/nfs/users/nfs_t/ta6/R-Scripts/heatmap.3.R")
 
 	my_profiles <- corrected_mat
@@ -210,10 +213,12 @@ general_cluster_profiles <- function(corrected_mat, matches, features_only=TRUE,
 		threshold <- quantile(D,probs=0.05)
 	
 		my_dists <- distfun(t(my_profiles))
+		my_dist_signif <- my_dists < (quantile(D, probs=0.05/prod(dim(my_dists))/2))
 		my_hclust <- hclustfun(my_dists)
 		my_sig <- cutree(my_hclust, h=threshold)
 		perm_signif <- rainbow(n=max(my_sig))[my_sig]
 	}
+	# Add pair-wise cluster significances.
 
 	## Set-up Heatmap ##
 	# heatmap colours & binning
@@ -242,6 +247,6 @@ general_cluster_profiles <- function(corrected_mat, matches, features_only=TRUE,
 	
 	heatout <- heatmap.3(my_profiles, trace="n", scale="row", col=heatcols, symbreaks=TRUE, key.title="", key.xlab="Relative Expression", hclustfun=hclustfun, distfun=distfun, ColSideColors=as.matrix(ColumnCols), ColSideColorsSize=length(ColumnCols[1,]))
 
-	return(invisible(heatout))
+	return(invisible(heatout), sig_groups = perm_signif, dist_mat=my_dists, dist_signif=my_dist_signif)
 }
 
