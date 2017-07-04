@@ -24,7 +24,7 @@
 \details{
 	These functions are to be passed to the "get_cluster_profile" function. They return a vector of 1s and 0s indicating whether each gene was identified as a feature using the respective method. m3drop is recommended for very large datasets, being both fast and consistent across datasets. marker.features will select genes giving the clearest separation of clusters but is also the slowest.
 
-	\code{kw.features} uses the kruskal-wallis test (kruskal.test) to find DE genes between the clusters then applies a Bonferroni multiple-testing correction (p.adjust). Genes with q-values < 0.05 are deemed features of the dataset.
+	\code{kw.features} uses the kruskal-wallis test (kruskal.test) to find DE genes between the clusters then applies a Bonferroni multiple-testing correction (p.adjust). Genes with q-values < 0.05 are deemed features of the dataset. Requires multiple cell-types in the dataset.
 
 	\code{m3drop.features} uses M3Drop feature selection with a 5\% FDR multiple testing correction. 
 
@@ -32,9 +32,10 @@
 
 	\code{hvg.features} uses highly variable gene feature selection as described in Brennecke et al. (2013) implementated in the M3Drop package. Uses default parameters with 5\% FDR multiple testing correction.
 
-	\code{marker.features} uses the complex_markers function to find markers of any set of clusters (n_max = n-1). Features are selected with AUC > 0.7 and q.value < 0.05 (Bonferroni). Uses strict_only=FALSE.
+	\code{marker.features} uses the complex_markers function to find markers of any set of clusters (n_max = n-1). Features are selected with AUC > 0.7 and q.value < 0.05 (Bonferroni). Uses strict_only=FALSE. Requires multiple cell-types in the dataset.
 
 	\code{no.feature.selection} keeps all genes. 
+
 }
 \value{
 	vector of 1s and 0s for each gene in the expression matrix, indicating whether that gene is a feature or not.

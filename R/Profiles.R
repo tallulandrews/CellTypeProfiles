@@ -221,7 +221,7 @@ cluster_profile_heatmap <- function(corrected_mat, matches, features_only=TRUE, 
 		threshold <- quantile(D,probs=0.05)
 	
 		my_dists <- distfun(t(my_profiles))
-		my_dist_signif <- my_dists < (quantile(D, probs=0.05/prod(dim(my_dists))/2))
+		my_dist_signif <- as.matrix(my_dists) < (quantile(D, probs=0.05/prod(dim(my_dists))/2))
 		my_hclust <- hclustfun(my_dists)
 		my_sig <- cutree(my_hclust, h=threshold)
 		perm_signif <- rainbow(n=max(my_sig))[my_sig]
