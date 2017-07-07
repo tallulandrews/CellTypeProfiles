@@ -259,7 +259,7 @@ cluster_profile_heatmap <- function(corrected_mat, matches, features_only=TRUE, 
 		heatout <- heatmap.3(my_profiles, trace="n", scale="row", col=heatcols, symbreaks=TRUE, key.title="", key.xlab="Relative Expression", hclustfun=hclustfun, distfun=distfun, ColSideColors=as.matrix(ColumnCols), ColSideColorsSize=length(ColumnCols[1,]))
 	} else {
 		pro_vs_pro = distfun(t(my_profiles))
-		if (exists("my_dist_signif")) {
+		if (exists("threshold")) {
 			my_max = max(pro_vs_pro);
 			tmp = as.matrix(pro_vs_pro)
 			tmp[tmp > threshold] = my_max
@@ -270,6 +270,6 @@ cluster_profile_heatmap <- function(corrected_mat, matches, features_only=TRUE, 
 		heatout <- heatmap.3(pro_vs_pro, trace="n", scale="none", col=rev(heatcols), symbreaks=FALSE,  key.title="", key.xlab="Distance", ColSideColors=as.matrix(ColumnCols), ColSideColorsSize=length(ColumnCols[1,]), symm=TRUE, Rowv=as.dendrogram(dendro), Colv=as.dendrogram(dendro))
 	}
 
-	return(invisible(list(heatmap_out=heatout, sig_groups = perm_signif, dist_mat=my_dists, dist_signif=my_dist_signif)))
+	return(invisible(list(heatmap_out=heatout, sig_groups = perm_signif, dist_mat=pro_vs_pro, sig_threshold=threshold)))
 }
 
