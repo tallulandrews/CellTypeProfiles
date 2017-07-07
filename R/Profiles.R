@@ -196,7 +196,7 @@ glm_of_matches <- function(matches) { #This is not optimized
 
 # Generalizable - Step 5 = Cluster corrected profiles
 #		& Step 6 = Calculate meta-profiles
-cluster_profile_heatmap <- function(corrected_mat, matches, features_only=TRUE, npermute=0, distfun=function(x){as.dist(1-cor(t(x), method="spearman"))}, hclustfun=function(x){hclust(x,method="complete")}, ann=NULL) {
+cluster_profile_heatmap <- function(corrected_mat, matches, features_only=TRUE, show_genes=FALSE, npermute=0, distfun=function(x){as.dist(1-cor(t(x), method="spearman"))}, hclustfun=function(x){hclust(x,method="complete")}, ann=NULL) {
 	#source("/nfs/users/nfs_t/ta6/R-Scripts/heatmap.3.R")
 
 	my_profiles <- corrected_mat
@@ -211,6 +211,7 @@ cluster_profile_heatmap <- function(corrected_mat, matches, features_only=TRUE, 
 	M <- my_profiles;
 	ncol <- length(my_profiles[1,])
 	nrow <- length(my_profiles[,1])
+	pairwise_threshold = 0
 	if (npermute > 0) {
 		set.seed(101); # reproduciblity
 		for(rep in 1:npermute) {
@@ -221,7 +222,8 @@ cluster_profile_heatmap <- function(corrected_mat, matches, features_only=TRUE, 
 		threshold <- quantile(D,probs=0.05)
 	
 		my_dists <- distfun(t(my_profiles))
-		my_dist_signif <- as.matrix(my_dists) < (quantile(D, probs=0.05/prod(dim(my_dists))/2))
+#		my_dist_signif <- as.matrix(my_dists) < (quantile(D, probs=0.05/prod(dim(my_dists))/2))
+		pairwise_threshold <- quantile(D, probs=0.05/prod(dim(my_dists))/2)
 		my_hclust <- hclustfun(my_dists)
 		my_sig <- cutree(my_hclust, h=threshold)
 		perm_signif <- rainbow(n=max(my_sig))[my_sig]
@@ -252,8 +254,21 @@ cluster_profile_heatmap <- function(corrected_mat, matches, features_only=TRUE, 
 		ann_col <- RColorBrewer::brewer.pal(length(levels(ann)), "Set3")
 		ColumnCols$Known <- ann_col[ann];
 	}
-	
-	heatout <- heatmap.3(my_profiles, trace="n", scale="row", col=heatcols, symbreaks=TRUE, key.title="", key.xlab="Relative Expression", hclustfun=hclustfun, distfun=distfun, ColSideColors=as.matrix(ColumnCols), ColSideColorsSize=length(ColumnCols[1,]))
+
+	if (show_genes) {
+		heatout <- heatmap.3(my_profiles, trace="n", scale="row", col=heatcols, symbreaks=TRUE, key.title="", key.xlab="Relative Expression", hclustfun=hclustfun, distfun=distfun, ColSideColors=as.matrix(ColumnCols), ColSideColorsSize=length(ColumnCols[1,]))
+	} else {
+		pro_vs_pro = distfun(t(my_profiles))
+		if (exists("my_dist_signif")) {
+			my_max = max(pro_vs_pro);
+			tmp = as.matrix(pro_vs_pro)
+			tmp[tmp > threshold] = my_max
+			pro_vs_pro = tmp;
+		}
+		dendro <- hclustfun(as.dist(pro_vs_pro))
+
+		heatout <- heatmap.3(pro_vs_pro, trace="n", scale="none", col=rev(heatcols), symbreaks=FALSE,  key.title="", key.xlab="Distance", ColSideColors=as.matrix(ColumnCols), ColSideColorsSize=length(ColumnCols[1,]), symm=TRUE, Rowv=as.dendrogram(dendro), Colv=as.dendrogram(dendro))
+	}
 
 	return(invisible(list(heatmap_out=heatout, sig_groups = perm_signif, dist_mat=my_dists, dist_signif=my_dist_signif)))
 }
