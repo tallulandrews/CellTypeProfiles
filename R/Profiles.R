@@ -251,7 +251,8 @@ cluster_profile_heatmap <- function(corrected_mat, matches, features_only=TRUE, 
 	# Column bar 3 = ann
 	if (!is.null(ann)) {
 		ann <- as.factor(ann)
-		ann_col <- RColorBrewer::brewer.pal(length(levels(ann)), "Set3")
+		#ann_col <- RColorBrewer::brewer.pal(length(levels(ann)), "Set3")
+		ann_col <- colorRampPalette(c("#d9d9d9","#fccde5","#bebada","#bc80bd","#80b1d3","#8dd3c7","#b3de69","#ccebc5","#ffffb3","#ffed6f","#fdb462","#fb8072"))(length(levels(ann)))
 		ColumnCols$Known <- ann_col[ann];
 	}
 
@@ -272,4 +273,3 @@ cluster_profile_heatmap <- function(corrected_mat, matches, features_only=TRUE, 
 
 	return(invisible(list(heatmap_out=heatout, sig_groups = perm_signif, dist_mat=pro_vs_pro, sig_threshold=threshold)))
 }
-
