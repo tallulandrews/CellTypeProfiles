@@ -1,3 +1,8 @@
+# Error Catching needs: duplicate row names, no consensus genes.
+# Error Catching needs: NAs in profiles
+# Error Catching needs: cell_type levels with no samples.
+
+
 # Generalizable - Step 1 = Get profiles
 get_cluster_profile <- function(expr_mat, clusters, norm_method="CPM", is.log=FALSE, out.log=2, feature_selection=kw.features) {
 	if (min(factor_counts(clusters)) < 2) {stop("Error: Cannot have a cell-type with a single sample.")}
@@ -157,6 +162,7 @@ glm_of_matches <- function(matches) { #This is not optimized
 	batch_lvl = levels(factor(matches$dataset))
 	type_lvl = levels(factor(matched_type))
 	all_matrix <- matches$profiles
+	# I think this former case is mathematically impossible.
 	if (length(unique(matched_batch)) < length(unique(matches$dataset))
 		& length(factor_counts(matches$labels)) > 1) {
 		# Insufficient matched groups
@@ -177,8 +183,11 @@ glm_of_matches <- function(matches) { #This is not optimized
 		corrected <- all_matrix - t(batch_effects[all_effect,])
 	} else {
 		# Matched groups cover all batches
-		effect_vec = rep(1, times=length(matched_batch));
-		all_effect <- rep(1, times=length(matches$dataset))
+
+		# rowID based on batchID for glm output
+		# 1 = intercept, 2-x = cell-types(-1), x-n = batches
+		effect_vec = rep(1, times=length(matched_batch)); # matched only
+		all_effect <- rep(1, times=length(matches$dataset)) 
 	
 		for (i in 2:length(batch_lvl)) {
 			effect_vec[matched_batch == batch_lvl[i]] <- i+length(type_lvl);
@@ -191,12 +200,24 @@ glm_of_matches <- function(matches) { #This is not optimized
 		batch_effects <- apply(matched_matrix, 1, calc_batch_effect)
 		corrected <- all_matrix - t(batch_effects[all_effect,])
 	}
+	return(list(corrected_mat=corrected, batch_effects=batch_effects, celltype_effects=celltype_effects))
+}
+
+# Generalizable - Weighted Means
+
+wmeans_of_matches <- function (matches){ #This is not optimized
+	all_matrix <- matches$profiles
+	dataset_fac <- factor(matches$dataset)
+	batch_effects <- my_row_mean_aggregate(all_matrix, dataset_fac);
+	
+	corrected <- all_matrix-batch_effects[,dataset_fac]
+	
 	return(list(corrected_mat=corrected, model_effects=batch_effects))
 }
 
 # Generalizable - Step 5 = Cluster corrected profiles
 #		& Step 6 = Calculate meta-profiles
-cluster_profile_heatmap <- function(corrected_mat, matches, features_only=TRUE, show_genes=FALSE, npermute=0, distfun=function(x){as.dist(1-cor(t(x), method="spearman"))}, hclustfun=function(x){hclust(x,method="complete")}, ann=NULL) {
+cluster_profile_heatmap <- function(corrected_mat, matches, features_only=TRUE, show_genes=FALSE, npermute=0, distfun=function(x){as.dist(1-cor(t(x), method="spearman"))}, hclustfun=function(x){hclust(x,method="complete")}, ann=NULL, dataset=NULL) {
 	#source("/nfs/users/nfs_t/ta6/R-Scripts/heatmap.3.R")
 
 	my_profiles <- corrected_mat
@@ -212,11 +233,12 @@ cluster_profile_heatmap <- function(corrected_mat, matches, features_only=TRUE, 
 	ncol <- length(my_profiles[1,])
 	nrow <- length(my_profiles[,1])
 	pairwise_threshold = 0
+	perm_signif <- NA;
 	if (npermute > 0) {
 		set.seed(101); # reproduciblity
 		for(rep in 1:npermute) {
 			P <- permute::shuffleSet(ncol, nset=nrow, quiet=TRUE);
-			perm <- t(sapply(seq_len(nrow(P)), function(i, P, M) M[i,P[i,]],M=M,P=P))
+			perm <- t(sapply(base::seq_len(nrow(P)), function(i, P, M) M[i,P[i,]],M=M,P=P))
 			D <- c(D,as.vector(distfun(t(perm))))
 		}
 		threshold <- quantile(D,probs=0.05)
@@ -227,6 +249,8 @@ cluster_profile_heatmap <- function(corrected_mat, matches, features_only=TRUE, 
 		my_hclust <- hclustfun(my_dists)
 		my_sig <- cutree(my_hclust, h=threshold)
 		perm_signif <- rainbow(n=max(my_sig))[my_sig]
+	} else {
+		threshold=NA
 	}
 	# Add pair-wise cluster significances.
 
@@ -241,7 +265,8 @@ cluster_profile_heatmap <- function(corrected_mat, matches, features_only=TRUE, 
 	match_lab <- as.character(matches$labels)
 	match_lab[match_lab %in% unmatched] <- "00_Unmatched"
 	match_lab <- factor(match_lab)
-	match_col = c("white",RColorBrewer::brewer.pal(length(levels(match_lab))-1, "Set2")) # Change "white" to background color
+	match_col = c("white", colorRampPalette(c("#ffffcc","#fed9a6","#fbb4ae","#decbe4","#b3cde3","#ccebc5"))(length(levels(match_lab))-1))
+#	match_col = c("white",RColorBrewer::brewer.pal(length(levels(match_lab))-1, "Set2")) # Change "white" to background color
 	Matches <- match_col[match_lab];
 	ColumnCols = data.frame(Matched=Matches)
 	# Column bar 2 = permute threshold;
@@ -255,15 +280,28 @@ cluster_profile_heatmap <- function(corrected_mat, matches, features_only=TRUE, 
 		ann_col <- colorRampPalette(c("#d9d9d9","#fccde5","#bebada","#bc80bd","#80b1d3","#8dd3c7","#b3de69","#ccebc5","#ffffb3","#ffed6f","#fdb462","#fb8072"))(length(levels(ann)))
 		ColumnCols$Known <- ann_col[ann];
 	}
+	if (!is.null(dataset)) {
+		dataset <- as.factor(dataset)
+		#ann_col <- RColorBrewer::brewer.pal(length(levels(ann)), "Set3")
+		data_col <- colorRampPalette(c("#fdb462", "#e5c494","#b3de69","#ffd92f","#fccde5"))(length(levels(dataset)))
+		ColumnCols$Dataset <- data_col[dataset];
+	}
 
 	if (show_genes) {
 		heatout <- heatmap.3(my_profiles, trace="n", scale="row", col=heatcols, symbreaks=TRUE, key.title="", key.xlab="Relative Expression", hclustfun=hclustfun, distfun=distfun, ColSideColors=as.matrix(ColumnCols), ColSideColorsSize=length(ColumnCols[1,]))
 	} else {
 		pro_vs_pro = distfun(t(my_profiles))
-		if (exists("threshold")) {
+		if (exists("threshold") & !is.na(threshold)) {
 			my_max = max(pro_vs_pro);
 			tmp = as.matrix(pro_vs_pro)
-			tmp[tmp > threshold] = my_max
+			tmp[tmp > pairwise_threshold] = my_max
+			tmp <- tmp/my_max; # rescale to 0-1.
+			pro_vs_pro = tmp;
+		} else {
+			threshold <- NA
+			my_max = max(pro_vs_pro);
+			tmp = as.matrix(pro_vs_pro)
+			tmp <- tmp/my_max; # rescale to 0-1.
 			pro_vs_pro = tmp;
 		}
 		dendro <- hclustfun(as.dist(pro_vs_pro))
@@ -272,4 +310,42 @@ cluster_profile_heatmap <- function(corrected_mat, matches, features_only=TRUE, 
 	}
 
 	return(invisible(list(heatmap_out=heatout, sig_groups = perm_signif, dist_mat=pro_vs_pro, sig_threshold=threshold)))
+}
+
+normalize_sng_cells <- function(expr_mat, dataset_name, glm_out, allow.negatives=FALSE) {
+	dataset_row = grep(paste("matched_batch",dataset_name, sep=""), rownames(glm_out$model_effects))
+	if (length(dataset_row)==0) {
+		print("This is the reference batch - no correction to be made")
+		return(expr_mat);
+	} 
+	keep_genes <- colnames(glm_out$model_effects)
+	expr_mat <- expr_mat[rownames(expr_mat) %in% keep_genes,]
+
+	if (allow.negatives) {
+		correct <- t(glm_out$model_effects[rep(dataset_row, times=ncol(expr_mat)),])
+		return(expr_mat-correct);
+	} else {
+		change = glm_out$model_effects[dataset_row,]
+		increases = change < 0
+		expr_mat[increases,] <- expr_mat[increases,]-change[increases]
+		
+		for(i in which(change > 0)) {
+			mean_change = change[i]
+			total_change = mean_change*ncol(expr_mat);
+			# This is trick b/c [total_change-sum(expr_mat[i,expr_mat[i,] < x)]/sum(expr_mat[i,] >=x) < min(expr_mat[i,] >=x);
+			threshold = expr_mat[i,]
+			zeros_change <- sapply(threshold, function(x) {sum(expr_mat[i,expr_mat[i,] < x])})
+			new_mean_change <- (total_change-zeros_change)/sapply(threshold, function(y){sum(expr_mat[i,] >= y)})
+			threshold_correct = min(threshold[new_mean_change < threshold])
+
+			zeros_change <- sum(expr_mat[i,expr_mat[i,] < threshold_correct])
+			expr_mat[i,expr_mat[i,] < threshold_correct] <- 0;
+
+			remaining_change <- total_change-zeros_change
+		
+			expr_mat[i,] <- expr_mat[i,]-remaining_change/sum(expr_mat[i,] > 0)
+			expr_mat[i,expr_mat[i,] < 0 ] <- 0
+		}
+		
+	}
 }
