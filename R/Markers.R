@@ -1,3 +1,25 @@
+ctp_fast_AUC <- function(expression_vec, truth) {
+        # using Mann-Whitney U test
+
+        R = rank(expression_vec);
+        N1 = sum(truth)
+        N2 = sum(!truth);
+        #U1 = sum(R[truth])-N1*(N1+1)/2
+        U2 = sum(R[!truth])-N2*(N2+1)/2
+        if (N1 == 0) {return(c(0,0,0))}
+        if (N2 == 0) {return(c(1,1,1))}
+        AUC = 1-U2/(N1*N2); # smaller valued ranks (i.e. lower expression values for !true).
+        # assumes large sample size
+        #  https://ncss-wpengine.netdna-ssl.com/wp-content/themes/ncss/pdf/Procedures/PASS/Confidence_Intervals_for_the_Area_Under_an_ROC_Curve.pdf
+        # originally (Hanley and McNeil 1982)
+        Q1 = AUC/(2-AUC)
+        Q2 = 2*AUC^2/(1+AUC)
+        SE = sqrt((AUC*(1-AUC)+ (N1-1)*(Q1-AUC^2)+(N2-1)*(Q2-AUC^2))/(N1*N2))
+        return(c(max(0, AUC-1.96*SE),AUC, min(1, AUC+1.96*SE)));
+}
+
+
+
 complex_markers <- function (expr_mat, labels, n_max=1, strict_only = FALSE) {
         # n_max = 1 should give the same as original just using different package.
         # require("pROC")
@@ -46,11 +68,15 @@ complex_markers <- function (expr_mat, labels, n_max=1, strict_only = FALSE) {
 
 		# Get AUC + 95% CI for this gene in top n groups
                 get_auc_ci <- function(n) {
-                        g_groups <- colnames(cluster_priority)[which(cluster_priority[g,] <= n)]
+                        g_groups <- colnames(cluster_priority)[which(cluster_priority[g,] <= n)];
+
                         if (length(g_groups) < length(unique(labels)) & length(g_groups) > 0) {
-                                g_roc <- pROC::roc(controls=expr_mat[g,!(labels %in% g_groups)], cases=expr_mat[g,(labels %in% g_groups)],
-                                                auc=TRUE, ci=TRUE, direction="<");
-                                return(as.vector(g_roc$ci))
+				# slow/accurate
+#                                g_roc <- pROC::roc(controls=expr_mat[g,!(labels %in% g_groups)], 
+#						cases=expr_mat[g,(labels %in% g_groups)],
+#                                                auc=TRUE, ci=TRUE, direction="<");
+                                #return(as.vector(g_roc$ci))
+				return(ctp_fast_AUC(expr_mat[g,], labels %in% g_groups));
                         } else {
                                 return(c(0,0.5,1))
                         }
