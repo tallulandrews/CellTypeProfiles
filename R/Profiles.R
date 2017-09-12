@@ -4,7 +4,7 @@
 
 
 # Generalizable - Step 1 = Get profiles
-get_cluster_profile <- function(expr_mat, clusters, norm_method="CPM", is.log=FALSE, out.log=2, feature_selection=kw.features) {
+get_cluster_profile <- function(expr_mat, clusters, norm_method="none", is.log=FALSE, out.log=2, feature_selection=kw.features) {
 	if (min(factor_counts(clusters)) < 2) {stop("Error: Cannot have a cell-type with a single sample.")}
 	# is.log should hold the base of the log if it has been log-transformed.
 	# If no norm here, need at least FS!
