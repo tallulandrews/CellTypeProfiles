@@ -1,11 +1,11 @@
 Package: CellTypeProfiles
-Version: 0.01.00
-Date: 2017-06-27
+Version: 0.02.00
+Date: 2017-09-13
 Title: Compare Cell-Type Profiles
 Author: Tallulah Andrews <tallulandrews@gmail.com>
 Maintainer: Tallulah Andrews <tallulandrews@gmail.com>
 Depends: R (>= 3.3.0)
-Imports: RColorBrewer, pROC, heatmap3, permute, igraph, edgeR, grDevices, graphics, stats, M3Drop
+Imports: RColorBrewer, pROC, heatmap3, permute, igraph, edgeR, grDevices, graphics, stats, M3Drop, matrixStats, preprocessCore
 Suggests: knitr, preprocessCore
 VignetteBuilder: knitr
 biocViews: RNASeq, Sequencing, Transcriptomics, GeneExpression, Software, FeatureExtraction

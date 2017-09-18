@@ -20,7 +20,7 @@ ctp_fast_AUC <- function(expression_vec, truth) {
 
 
 
-complex_markers <- function (expr_mat, labels, n_max=1, strict_only = FALSE) {
+complex_markers <- function (expr_mat, labels, n_max=length(unique(labels))-1, strict_only = FALSE) {
         # n_max = 1 should give the same as original just using different package.
         # require("pROC")
         if (length(labels) != length(expr_mat[1, ])) {

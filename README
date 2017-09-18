@@ -1,5 +1,7 @@
 # CellTypeProfiles
 
+***UNDER DEVELOPMENT***
+
 This is an R package for generating and comparing cell-type profiles from single-cell RNASeq data. 
 
 Includes :

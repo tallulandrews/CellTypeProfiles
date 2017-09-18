@@ -14,4 +14,13 @@ my_row_mean_aggregate <- function(mat, groups) {
         return(result);
 }
 
+my_row_var_aggregate <- function(mat, groups) {
+        # Much faster version
+        MAT <- as.matrix(mat)
+        x <- split(seq(ncol(MAT)), groups)
+        result <- sapply(x, function(a) matrixStats::rowVars(MAT[,a]))
+
+        return(result);
+}
+
 #cosine_dist <- function(x,y) {x %*% y / sqrt(x%*%x * y%*%y)}

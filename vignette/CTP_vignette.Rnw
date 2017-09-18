@@ -1,0 +1,77 @@
+\documentclass[a4paper]{article}
+\begin{document}
+
+\title{Introduction to Cell-Type Profiles}
+\author{Tallulah Andrews}
+%\VignetteIndexEntry{Introduction to M3Drop}
+
+\maketitle
+
+\section*{Introduction}
+
+
+\section*{Example Workflow}
+
+<<results=hide>>=
+library(M3Drop)
+@
+\begin{center}
+<<fig=TRUE>>=
+# commands here
+@
+\\
+\textbf{Figure 1}: Fits of three different dropout models.
+\end{center}
+
+\section*{Calculating Profiles}
+
+<<>>=
+example_profile = get_cluster_profile(example_data, example_labels, norm_method="CPM", is.log=2, out.log=2, feature_selection=marker.features)
+@
+
+\subsection*{Feature Selection Methods}
+
+\section*{Combining Profiles \& Matching Cell-types}
+
+<<>>=
+profile_List = list(D=Deng_profile, 
+		B=Zhong_profile, 
+		X=Xue_profile,
+		F=Fan_profile, 
+		G=Goolam_profile, 
+		XH=Xue_H_profile, 
+		P=Petro_profile)
+
+matches = combine_and_match_clusters(profile_List)
+@
+
+\section*{Batch Correction}
+<<>>=
+corrected_profiles = glm_of_matches(matches)
+@
+\section*{Clustering Profiles}
+<<fig=TRUE>>=
+heatout = cluster_profile_heatmap(corrected_profiles$corrected_mat, matches, npermute=500, ann=truth)
+@
+\subsection*{Update matches with clustered cell-types}
+
+<<>>=
+# Custom threshold
+new_matched_labels <- cutree(as.hclust(heatout@colDendrogram, k=6)
+# Permutation based threshold
+matches$labels <- heatout$sig_groups
+@
+
+The batch correction could now be run again to improve results. 
+
+\section*{Single-cell Batch Correction}
+
+\section*{Identifying DE/Markers across datasets}
+
+
+
+\section*{References}
+
+Tallulah Andrews, Martin Hemberg. Modelling dropouts allows for unbiased identification of marker genes in scRNASeq experiments. \textit{bioRxiv}, 2016. doi:10.1101/065094
+
+\end{document}
