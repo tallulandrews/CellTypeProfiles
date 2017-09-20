@@ -9,7 +9,7 @@ Imports: RColorBrewer, pROC, heatmap3, permute, igraph, edgeR, grDevices, graphi
 Suggests: knitr, preprocessCore
 VignetteBuilder: knitr
 biocViews: RNASeq, Sequencing, Transcriptomics, GeneExpression, Software, FeatureExtraction
-Collate: General.R heatmap.3.R FeatureSelection.R Markers.R Profiles.R
+Collate: General.R heatmap.3.R FeatureSelection.R Markers.R Profiles.R Stats_output.R
 Description: This package provides functions for generating and comparing cell-type profiles from single-cell RNASeq data.
 URL: https://github.com/tallulandrews/CellTypeProfiles
 BugReports: https://github.com/tallulandrews/CellTypeProfiles/issues

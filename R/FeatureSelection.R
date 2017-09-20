@@ -1,9 +1,11 @@
 # Generalizable - Step 0 = feature selection functions
 get_assignment_matrix <- function(expr_mat, clusters) {
-	meds <- apply(expr_mat, 1, median)
+	meds <- apply(expr_mat, 1, mean)
 	high <- expr_mat > meds
+	freq <- rowSums(high)/ncol(high)
 	cluster_assign <- my_row_mean_aggregate(high, clusters);
 	cluster_assign <- apply(cluster_assign > 0.5, 2, as.numeric);
+	cluster_assign[freq > 0.5,] <- apply(cluster_assign[freq > 0.5,] < 0.5, 2, as.numeric); # inverse for negative markers
 	return(cluster_assign);
 }
 
@@ -70,6 +72,8 @@ marker.features <- function(expr_mat, clusters) {
 	out_mat <- markers[,(1:ngroups)+1]
 	exclude <- !(auc_filter & sig_filter)
 	out_mat[exclude,] <- matrix(0, nrow=sum(exclude), ncol=ngroups)
+	on_freq <- rowSums(out_mat)/ncol(out_mat);
+	out_mat[on_freq > 0.5,] <- abs(out_mat[on_freq > 0.5,]-1) # invert negative markers
 	#return(as.numeric(auc_filter & sig_filter));
 	return(out_mat);
 }
@@ -80,6 +84,8 @@ marker.strict.features <- function(expr_mat, clusters) {
 	auc_filter = markers[,1] > 0;
 	ngroups = length(unique(clusters))
 	out_mat <- markers[,(1:ngroups)+1]
+	on_freq <- rowSums(out_mat)/ncol(out_mat);
+	out_mat[on_freq > 0.5,] <- abs(out_mat[on_freq > 0.5,]-1) # invert negative markers
 	#return(as.numeric(auc_filter));
 	return(out_mat);
 }

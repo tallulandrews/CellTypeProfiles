@@ -270,7 +270,7 @@ combine_and_match_clusters <- function(profile_list, features=NA, multihit=FALSE
 			warning(paste("Datasets: ", names(profile_list)[i], "shares no cell-type with other datasets and will be excluded.", sep=""))
 			exclude <- Combined_Clusters %in% these_groups;
 			Combined_Clusters <- Combined_Clusters[!exclude]
-			Combined <- Combined[!exclude]
+			Combined <- Combined[,!exclude]
 			Combined_features <- Combined_features[!exclude]
 		} else {
 			labs <- rep(names(profile_list)[i], times=ncol(profile_tab))
@@ -365,7 +365,7 @@ wmeans_of_matches <- function (matches){ #This is not optimized
 	
 	corrected <- all_matrix-batch_effects[,dataset_fac]
 	
-	return(list(corrected_profiles=corrected, model_effects=batch_effects))
+	return(list(corrected_profiles=corrected, batch_effects=batch_effects))
 }
 
 # Generalizable - Step 5 = Cluster corrected profiles
@@ -466,20 +466,21 @@ cluster_profile_heatmap <- function(corrected_profiles, matches, features_only=T
 }
 
 # Use the norm matrix from the new profiles method.
-correct_sng_cells <- function(norm_mat, dataset_name, glm_out, allow.negatives=FALSE) {
-	dataset_row = grep(paste("matched_batch",dataset_name, sep=""), rownames(glm_out$model_effects))
+correct_sng_cells <- function(norm_mat, dataset_name, glm_out, allow.negatives=FALSE) { # SLOW!
+	#dataset_row = grep(paste("matched_batch",dataset_name, sep=""), rownames(glm_out$batch_effects))
+	dataset_row = grep(dataset_name, rownames(glm_out$batch_effects))
 	if (length(dataset_row)==0) {
 		print("This is the reference batch - no correction to be made")
 		return(norm_mat);
 	} 
-	keep_genes <- colnames(glm_out$model_effects)
+	keep_genes <- colnames(glm_out$batch_effects)
 	norm_mat <- norm_mat[rownames(norm_mat) %in% keep_genes,]
 
 	if (allow.negatives) {
-		correct <- t(glm_out$model_effects[rep(dataset_row, times=ncol(norm_mat)),])
+		correct <- t(glm_out$batch_effects[rep(dataset_row, times=ncol(norm_mat)),])
 		return(norm_mat-correct);
 	} else {
-		change = glm_out$model_effects[dataset_row,]
+		change = glm_out$batch_effects[dataset_row,]
 		increases = change < 0
 		norm_mat[increases,] <- norm_mat[increases,]-change[increases]
 		
@@ -509,4 +510,5 @@ correct_sng_cells <- function(norm_mat, dataset_name, glm_out, allow.negatives=F
 		}
 		
 	}
+	return(norm_mat);
 }
