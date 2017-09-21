@@ -4,7 +4,7 @@
 
 
 # Generalizable - Step 1 = Get profiles
-get_cluster_profile <- function(expr_mat, clusters, norm_method="none", is.log=FALSE, out.log=2, feature_selection=marker.features) {
+get_cluster_profile <- function(expr_mat, clusters, norm_method="quantile", is.log=FALSE, out.log=2, feature_selection=danb.features) {
 	# Add quantile normalization somewhere????
 	if (min(factor_counts(clusters)) < 2) {stop("Error: Cannot have a cell-type with a single sample.")}
 	# is.log should hold the base of the log if it has been log-transformed.
@@ -218,7 +218,18 @@ combine_and_match_clusters <- function(profile_list, features=NA, multihit=FALSE
 	}
 	# match them all using graph connected components
 	#require("igraph")
-	my_graph <- igraph::graph_from_edgelist(as.matrix(RECIP), directed=FALSE)
+	dataset_names = factor(names(profile_list));
+	vert_tab <- unique(c(RECIP[,1], RECIP[,2]))
+	vert_dat <- rep("", length(vert_tab))
+	for (d in dataset_names) {
+		x <- grep(d,vert_tab)
+		if (length(x) > 0) {
+			vert_dat[x] <- d
+		}
+	}
+	vert_dat <- factor(vert_dat, levels=levels(dataset_names))
+	vert_tab <- data.frame(vertex=vert_tab, dataset=vert_dat, color=get_dataset_cols(vert_dat), row.names=vert_tab)
+	my_graph <- igraph::graph_from_edgelist(as.matrix(RECIP), directed=FALSE, vertices=vert_tab)
 	matched_clusters <- igraph::components(my_graph)$membership
 	if (!suppress.plot) {
 		plot(my_graph) # colour this by dataset
@@ -417,10 +428,8 @@ cluster_profile_heatmap <- function(corrected_profiles, matches, features_only=T
 	unmatched <- names(matched[matched == 1]);
 	match_lab <- as.character(matches$labels)
 	match_lab[match_lab %in% unmatched] <- "00_Unmatched"
-	match_lab <- factor(match_lab)
-	match_col = c("white", colorRampPalette(c("#ffffcc","#fed9a6","#fbb4ae","#decbe4","#b3cde3","#ccebc5"))(length(levels(match_lab))-1))
-#	match_col = c("white",RColorBrewer::brewer.pal(length(levels(match_lab))-1, "Set2")) # Change "white" to background color
-	Matches <- match_col[match_lab];
+	Matches <- get_match_cols(match_lab)
+
 	ColumnCols = data.frame(Matched=Matches)
 	# Column bar 2 = permute threshold;
 	if (npermute > 0) {
@@ -428,16 +437,10 @@ cluster_profile_heatmap <- function(corrected_profiles, matches, features_only=T
 	}
 	# Column bar 3 = ann
 	if (!is.null(ann)) {
-		ann <- as.factor(ann)
-		#ann_col <- RColorBrewer::brewer.pal(length(levels(ann)), "Set3")
-		ann_col <- colorRampPalette(c("#d9d9d9","#fccde5","#bebada","#bc80bd","#80b1d3","#8dd3c7","#b3de69","#ccebc5","#ffffb3","#ffed6f","#fdb462","#fb8072"))(length(levels(ann)))
-		ColumnCols$Known <- ann_col[ann];
+		ColumnCols$Known <- get_ann_cols(ann);
 	}
 	if (!is.null(dataset)) {
-		dataset <- as.factor(dataset)
-		#ann_col <- RColorBrewer::brewer.pal(length(levels(ann)), "Set3")
-		data_col <- colorRampPalette(c("#fdb462", "#e5c494","#b3de69","#ffd92f","#fccde5"))(length(levels(dataset)))
-		ColumnCols$Dataset <- data_col[dataset];
+		ColumnCols$Dataset <- get_dataset_cols(dataset);
 	}
 
 	if (show_genes) {
@@ -513,4 +516,29 @@ correct_sng_cells <- function(norm_mat, dataset_name, glm_out, allow.negatives=F
 		
 	}
 	return(norm_mat);
+}
+
+# Colour Schemes
+
+get_match_cols <- function(match_lab) {
+	match_lab <- as.factor(match_lab)
+	match_col = c("white", colorRampPalette(c("#ffffcc","#fed9a6","#fbb4ae","#decbe4","#b3cde3","#ccebc5"))(length(levels(match_lab))-1))
+#	match_col = c("white",RColorBrewer::brewer.pal(length(levels(match_lab))-1, "Set2")) # Change "white" to background color
+	return(match_col[match_lab]);
+}
+
+get_ann_cols <- function(ann) {
+		ann <- as.factor(ann)
+		#ann_col <- RColorBrewer::brewer.pal(length(levels(ann)), "Set3")
+		ann_col <- colorRampPalette(c("#d9d9d9","#fccde5","#bebada","#bc80bd",
+						"#80b1d3","#8dd3c7","#b3de69","#ccebc5",
+						"#ffffb3","#ffed6f","#fdb462","#fb8072"))(length(levels(ann)))
+		return(ann_col[ann]);
+}
+
+get_dataset_cols <- function(dataset) {
+		dataset <- as.factor(dataset)
+		#ann_col <- RColorBrewer::brewer.pal(length(levels(ann)), "Set3")
+		data_col <- colorRampPalette(c("#fdb462", "#e5c494","#b3de69","#ffd92f","#fccde5"))(length(levels(dataset)))
+		return(data_col[dataset]);
 }

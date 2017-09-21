@@ -15,10 +15,13 @@ kw.features <- function(expr_mat, clusters) {
         p.value[is.na(p.value )] = 1;
         q.value <- p.adjust(p.value, "bon")
 	f_names <- rownames(expr_mat)[q.value < 0.05];
+
+
 	assignment <- get_assignment_matrix(expr_mat, clusters);
 	rownames(assignment) <- rownames(expr_mat);
 	f_rows = rownames(assignment) %in% f_names;
 	assignment[!f_rows,] <- matrix(0, nrow=sum(!f_rows), ncol=length(unique(clusters)))
+
 	return(assignment)
 #        return(as.numeric(q.value < 0.05))
 }
@@ -31,10 +34,16 @@ m3drop.features <- function(expr_mat, clusters) {
 #        require("M3Drop")
         features <- M3Drop::M3DropFeatureSelection(expr_mat, suppress.plot=TRUE);
         f_names <- rownames(features[features$q.value < 0.05,])
-	assignment <- get_assignment_matrix(expr_mat, clusters);
-	rownames(assignment) <- rownames(expr_mat);
-	f_rows = rownames(assignment) %in% f_names;
-	assignment[!f_rows,] <- matrix(0, nrow=sum(!f_rows), ncol=length(unique(clusters)))
+
+#	assignment <- get_assignment_matrix(expr_mat, clusters);
+#	rownames(assignment) <- rownames(expr_mat);
+#	f_rows = rownames(assignment) %in% f_names;
+#	assignment[!f_rows,] <- matrix(0, nrow=sum(!f_rows), ncol=length(unique(clusters)))
+
+	nclust <- length(unique(clusters))
+	is.f <- as.numeric(rownames(expr_mat) %in% f_names)
+	assignement <- matrix(rep(is.f, times=nclust), ncol=nclust)
+
 	return(assignment)
 #        return(as.numeric(rownames(expr_mat) %in% f_names))
 } 
@@ -45,10 +54,16 @@ danb.features <- function(expr_mat, clusters) {
 	fit <- M3Drop::NBumiFitModel(counts);
 	topX <- ceiling(0.05*length(counts[,1]))
 	f_names <- names(M3Drop::NBumiFeatureSelectionCombinedDrop(fit)[1:topX])
-	assignment <- get_assignment_matrix(expr_mat, clusters);
-	rownames(assignment) <- rownames(expr_mat);
-	f_rows = rownames(assignment) %in% f_names;
-	assignment[!f_rows,] <- matrix(0, nrow=sum(!f_rows), ncol=length(unique(clusters)))
+
+#	assignment <- get_assignment_matrix(expr_mat, clusters);
+#	rownames(assignment) <- rownames(expr_mat);
+#	f_rows = rownames(assignment) %in% f_names;
+#	assignment[!f_rows,] <- matrix(0, nrow=sum(!f_rows), ncol=length(unique(clusters)))
+
+	nclust <- length(unique(clusters))
+	is.f <- as.numeric(rownames(expr_mat) %in% f_names)
+	assignement <- matrix(rep(is.f, times=nclust), ncol=nclust)
+
 	return(assignment)
 }
 
@@ -56,10 +71,16 @@ hvg.features <- function (expr_mat, clusters) {
 #        require("M3Drop")
         features <- M3Drop::BrenneckeGetVariableGenes(expr_mat, suppress.plot=TRUE, fdr=0.05);
         f_names <- rownames(features[features$q.value < 0.05,])
-	assignment <- get_assignment_matrix(expr_mat, clusters);
-	rownames(assignment) <- rownames(expr_mat);
-	f_rows = rownames(assignment) %in% f_names;
-	assignment[!f_rows,] <- matrix(0, nrow=sum(!f_rows), ncol=length(unique(clusters)))
+
+#	assignment <- get_assignment_matrix(expr_mat, clusters);
+#	rownames(assignment) <- rownames(expr_mat);
+#	f_rows = rownames(assignment) %in% f_names;
+#	assignment[!f_rows,] <- matrix(0, nrow=sum(!f_rows), ncol=length(unique(clusters)))
+
+	nclust <- length(unique(clusters))
+	is.f <- as.numeric(rownames(expr_mat) %in% f_names)
+	assignement <- matrix(rep(is.f, times=nclust), ncol=nclust)
+
 	return(assignment)
 }
 
