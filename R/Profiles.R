@@ -467,14 +467,16 @@ cluster_profile_heatmap <- function(corrected_profiles, matches, features_only=T
 
 # Use the norm matrix from the new profiles method.
 correct_sng_cells <- function(norm_mat, dataset_name, glm_out, allow.negatives=FALSE) { # SLOW!
+	keep_genes <- colnames(glm_out$batch_effects)
+	#norm_mat <- norm_mat[rownames(norm_mat) %in% keep_genes,]
+	norm_mat <- norm_mat[match(keep_genes,rownames(norm_mat)),]	
+
 	#dataset_row = grep(paste("matched_batch",dataset_name, sep=""), rownames(glm_out$batch_effects))
 	dataset_row = grep(dataset_name, rownames(glm_out$batch_effects))
 	if (length(dataset_row)==0) {
 		print("This is the reference batch - no correction to be made")
 		return(norm_mat);
 	} 
-	keep_genes <- colnames(glm_out$batch_effects)
-	norm_mat <- norm_mat[rownames(norm_mat) %in% keep_genes,]
 
 	if (allow.negatives) {
 		correct <- t(glm_out$batch_effects[rep(dataset_row, times=ncol(norm_mat)),])
