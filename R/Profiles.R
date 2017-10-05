@@ -6,6 +6,7 @@
 # Generalizable - Step 1 = Get profiles
 get_cluster_profile <- function(expr_mat, clusters, norm_method="quantile", is.log=FALSE, out.log=2, feature_selection=danb.features) {
 	# Add quantile normalization somewhere????
+	clusters <- as.factor(clusters);
 	if (min(factor_counts(clusters)) < 2) {stop("Error: Cannot have a cell-type with a single sample.")}
 	# is.log should hold the base of the log if it has been log-transformed.
 	# If no norm here, need at least FS!
@@ -20,20 +21,26 @@ get_cluster_profile <- function(expr_mat, clusters, norm_method="quantile", is.l
 	if (norm_method=="CPM") {
 		# CPM
 		normfact <- colSums(profiles);
+		normfact_sc <- colSums(expr_mat);
 	} else if (norm_method %in% c("TMM", "RLE", "upperquartile", "none")) {
 		# TMM
 		#require("edgeR")
 		normfact <- edgeR::calcNormFactors(as.matrix(profiles), method=norm_method)
+		normfact_sc <- edgeR::calcNormFactors(as.matrix(expr_mat), method=norm_method);
 	} else if (norm_method == "quantile") {
-		profiles <- preprocessCore::normalize.quantiles(profiles)
-		expr_mat <- preprocessCore::normalize.quantiles(expr_mat, copy=FALSE)
+		normfact <- rep(1, length=ncol(profiles));
+		normfact_sc <- rep(1, length=ncol(expr_mat));
+		profiles <- preprocessCore::normalize.quantiles(as.matrix(profiles))
+		expr_mat <- preprocessCore::normalize.quantiles(as.matrix(expr_mat), copy=FALSE)
 	} else {
 		warning("Warning: Unrecognized normalization method. Profiles will be scaled but not normalized.")
 		normfact <- rep(1, times=length(profiles[1,]))
+		normfact_sc <- rep(1, length=ncol(profiles));
 	}
 
 	# Apply & scale to ~ 1,000,000 counts per profile
 	profiles <- t(t(profiles)/normfact)
+	expr_mat <- t(t(expr_mat)/normfact_sc)
 	scalefact <- 1000000/median(colSums(profiles))
 	profiles <- profiles*scalefact
 

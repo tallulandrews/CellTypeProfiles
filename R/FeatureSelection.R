@@ -42,7 +42,7 @@ m3drop.features <- function(expr_mat, clusters) {
 
 	nclust <- length(unique(clusters))
 	is.f <- as.numeric(rownames(expr_mat) %in% f_names)
-	assignement <- matrix(rep(is.f, times=nclust), ncol=nclust)
+	assignment <- matrix(rep(is.f, times=nclust), ncol=nclust)
 
 	return(assignment)
 #        return(as.numeric(rownames(expr_mat) %in% f_names))
@@ -62,7 +62,7 @@ danb.features <- function(expr_mat, clusters) {
 
 	nclust <- length(unique(clusters))
 	is.f <- as.numeric(rownames(expr_mat) %in% f_names)
-	assignement <- matrix(rep(is.f, times=nclust), ncol=nclust)
+	assignment <- matrix(rep(is.f, times=nclust), ncol=nclust)
 
 	return(assignment)
 }
@@ -79,7 +79,7 @@ hvg.features <- function (expr_mat, clusters) {
 
 	nclust <- length(unique(clusters))
 	is.f <- as.numeric(rownames(expr_mat) %in% f_names)
-	assignement <- matrix(rep(is.f, times=nclust), ncol=nclust)
+	assignment <- matrix(rep(is.f, times=nclust), ncol=nclust)
 
 	return(assignment)
 }

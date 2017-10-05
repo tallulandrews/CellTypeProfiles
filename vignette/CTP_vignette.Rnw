@@ -12,21 +12,10 @@
 
 \section*{Example Workflow}
 
-<<results=hide>>=
-library(M3Drop)
-@
-\begin{center}
-<<fig=TRUE>>=
-# commands here
-@
-\\
-\textbf{Figure 1}: Fits of three different dropout models.
-\end{center}
-
 \section*{Calculating Profiles}
 
 <<>>=
-example_profile = get_cluster_profile(example_data, example_labels, norm_method="CPM", is.log=2, out.log=2, feature_selection=marker.features)
+example_profile = get_cluster_profile(zhong_list$data, zhong_list$labels, norm_method="CPM", is.log=NA, out.log=2, feature_selection=marker.features)
 @
 
 \subsection*{Feature Selection Methods}
@@ -38,9 +27,7 @@ profile_List = list(D=Deng_profile,
 		B=Zhong_profile, 
 		X=Xue_profile,
 		F=Fan_profile, 
-		G=Goolam_profile, 
-		XH=Xue_H_profile, 
-		P=Petro_profile)
+		G=Goolam_profile)
 
 matches = combine_and_match_clusters(profile_List)
 @
@@ -52,6 +39,7 @@ corrected_profiles = glm_of_matches(matches)
 \section*{Clustering Profiles}
 <<fig=TRUE>>=
 heatout = cluster_profile_heatmap(corrected_profiles$corrected_mat, matches, npermute=500, ann=truth)
+heatout <- heatout$heatmap_out
 @
 \subsection*{Update matches with clustered cell-types}
 
@@ -65,6 +53,10 @@ matches$labels <- heatout$sig_groups
 The batch correction could now be run again to improve results. 
 
 \section*{Single-cell Batch Correction}
+
+<<>>=
+sc_corrected <- correct_sng_cells(Biase_profile$norm_mat, "B", corrected_profiles, allow.negatives=TRUE)
+@
 
 \section*{Identifying DE/Markers across datasets}
 
