@@ -403,8 +403,10 @@ cluster_profile_heatmap <- function(corrected_profiles, matches, features_only=T
 	M <- my_profiles;
 	ncol <- length(my_profiles[1,])
 	nrow <- length(my_profiles[,1])
-	pairwise_threshold = 0
-	perm_signif <- NA;
+	coarse_threshold = -1
+	fine_threshold = -1
+	perm_coarse <- NA;
+	perm_fine <- NA;
 	if (npermute > 0) {
 		set.seed(101); # reproduciblity
 		for(rep in 1:npermute) {
@@ -412,16 +414,19 @@ cluster_profile_heatmap <- function(corrected_profiles, matches, features_only=T
 			perm <- t(sapply(base::seq_len(nrow(P)), function(i, P, M) M[i,P[i,]],M=M,P=P))
 			D <- c(D,as.vector(distfun(t(perm))))
 		}
-		threshold <- quantile(D,probs=0.05)
 	
 		my_dists <- distfun(t(my_profiles))
 #		my_dist_signif <- as.matrix(my_dists) < (quantile(D, probs=0.05/prod(dim(my_dists))/2))
-		pairwise_threshold <- quantile(D, probs=0.05/prod(dim(my_dists))/2)
+		coarse_threshold <- quantile(D, probs=0.05)
+		#coarse_threshold <- quantile(D, probs=0.05/prod(dim(my_dists))/2)
+		CI95 <- quantile(D, probs=c(0.025, 0.975))
+		CI95_width <- CI95[2]-CI95[1];
+		fine_threshold <- CI95_width/2; # 95% CI centered at zero
 		my_hclust <- hclustfun(my_dists)
-		my_sig <- cutree(my_hclust, h=threshold)
-		perm_signif <- rainbow(n=max(my_sig))[my_sig]
-	} else {
-		threshold=NA
+		c_coarse <- cutree(my_hclust, h=coarse_threshold)
+		c_fine <- cutree(my_hclust, h=fine_threshold)
+		perm_coarse <- rainbow(n=max(c_coarse))[c_coarse]
+		perm_fine <- rev(rainbow(n=max(c_fine)))[c_fine]
 	}
 	# Add pair-wise cluster significances.
 
@@ -440,7 +445,8 @@ cluster_profile_heatmap <- function(corrected_profiles, matches, features_only=T
 	ColumnCols = data.frame(Matched=Matches)
 	# Column bar 2 = permute threshold;
 	if (npermute > 0) {
-		ColumnCols$Signif <- perm_signif
+		ColumnCols$Coarse <- perm_coarse
+		ColumnCols$Fine <- perm_fine
 	}
 	# Column bar 3 = ann
 	if (!is.null(ann)) {
@@ -454,14 +460,13 @@ cluster_profile_heatmap <- function(corrected_profiles, matches, features_only=T
 		heatout <- heatmap.3(my_profiles, trace="n", scale="row", col=heatcols, symbreaks=TRUE, key.title="", key.xlab="Relative Expression", hclustfun=hclustfun, distfun=distfun, ColSideColors=as.matrix(ColumnCols), ColSideColorsSize=length(ColumnCols[1,]))
 	} else {
 		pro_vs_pro = distfun(t(my_profiles))
-		if (exists("threshold") & !is.na(threshold)) {
+		if (coarse_threshold > -1) {
 			my_max = max(pro_vs_pro);
 			tmp = as.matrix(pro_vs_pro)
-			tmp[tmp > pairwise_threshold] = my_max
+			tmp[tmp > coarse_threshold] = my_max
 			tmp <- tmp/my_max; # rescale to 0-1.
 			pro_vs_pro = tmp;
 		} else {
-			threshold <- NA
 			my_max = max(pro_vs_pro);
 			tmp = as.matrix(pro_vs_pro)
 			tmp <- tmp/my_max; # rescale to 0-1.
@@ -472,7 +477,7 @@ cluster_profile_heatmap <- function(corrected_profiles, matches, features_only=T
 		heatout <- heatmap.3(pro_vs_pro, trace="n", scale="none", col=rev(heatcols), symbreaks=FALSE,  key.title="", key.xlab="Distance", ColSideColors=as.matrix(ColumnCols), ColSideColorsSize=length(ColumnCols[1,]), symm=TRUE, Rowv=as.dendrogram(dendro), Colv=as.dendrogram(dendro))
 	}
 
-	return(invisible(list(heatmap_out=heatout, sig_groups = perm_signif, dist_mat=pro_vs_pro, sig_threshold=threshold)))
+	return(invisible(list(heatmap_out=heatout, sig_coarse = perm_coarse, sig_fine = perm_fine, dist_mat=pro_vs_pro, coarse_threshold=coarse_threshold, fine_threshold=fine_threshold)))
 }
 
 # Use the norm matrix from the new profiles method.
