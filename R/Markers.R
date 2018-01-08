@@ -57,7 +57,6 @@ complex_markers <- function (expr_mat, labels, n_max=length(unique(labels))-1, s
 	label_columns <- sort(unique(labels));
         # Consider each gene a possible marker for top 1->n_max groups
         gene_auc <- function(g) {
-		print(g)
 		# Short circuit for genes which invariant
 		if (sum(cluster_priority[g,] == cluster_priority[g,1]) == length(cluster_priority[g,])) {
 			group=rep(0, times=length(label_columns));
