@@ -90,7 +90,12 @@ complex_markers <- function (expr_mat, labels, n_max=length(unique(labels))-1, s
 
 		# Identify top set of groups this gene is a marker for & determine if good enough to return.
                 top = which(auc_tab[2,] == max(auc_tab[2,]))
-                sec = which(auc_tab[2,] == max(auc_tab[2,-top]))
+		
+		if (n_max == 1) {
+			sec <- top
+		} else {
+                	sec = which(auc_tab[2,] == max(auc_tab[2,-top]))
+		}
                 if (n_max > 1 & min(auc_tab[1,top]) <= max(auc_tab[2,sec]) & strict_only) {
                         # Not a marker : ci of top set of groups contains auc of second best set of groups
                         group=rep(0, times=length(label_columns));
