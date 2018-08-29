@@ -82,11 +82,20 @@ complex_markers <- function (expr_mat, labels, n_max=length(unique(labels))-1, s
                                 #return(as.vector(g_roc$ci))
 				return(ctp_fast_AUC(expr_mat[g,], labels %in% g_groups));
                         } else {
-                                return(c(0,0.5,1))
+                                return(c(-1,-1,-1))
                         }
                 }
 		# AUCs for this gene at all ns
                 auc_tab <- sapply(1:n_max, get_auc_ci)
+
+		# short circuit if no valid aucs
+		if (max(auc_tab[2,]) < 0 ) {
+			group=rep(0, times=length(label_columns));
+			if (n_max == 1) { group="NA" }
+                        pval=-1
+                        auc=-1
+			return(c(auc, group, pval))
+		} 
 
 		# Identify top set of groups this gene is a marker for & determine if good enough to return.
                 top = which(auc_tab[2,] == max(auc_tab[2,]))
@@ -105,6 +114,11 @@ complex_markers <- function (expr_mat, labels, n_max=length(unique(labels))-1, s
                         # Return marker info
                         n = max(top)
                         g_groups = colnames(cluster_priority)[which(cluster_priority[g,] <= n)];
+			if (length(g_groups) < 1 & n_max == 1) {
+				group="None/Tied"
+				pval=-1
+				auc=-1
+			} else {
 			if (n_max == 1) {
 	                        group = paste(g_groups, collapse="+")
 			} else {
@@ -113,6 +127,7 @@ complex_markers <- function (expr_mat, labels, n_max=length(unique(labels))-1, s
                         auc = auc_tab[2,n]
 			# p.value from wilcox test
                         pval = wilcox.test(expr_mat[g,!(labels %in% g_groups)],expr_mat[g,(labels %in% g_groups)])$p.value
+			}
                 }
                 return(c(auc, group, pval))
         }
