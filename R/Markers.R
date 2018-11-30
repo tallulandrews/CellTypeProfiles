@@ -20,7 +20,7 @@ ctp_fast_AUC <- function(expression_vec, truth) {
 
 
 
-complex_markers <- function (expr_mat, labels, n_max=length(unique(labels))-1, strict_only = FALSE) {
+complex_markers <- function (expr_mat, labels, n_max=length(unique(labels))-1, strict_only = FALSE, strict_BON=FALSE) {
         # n_max = 1 should give the same as original just using different package.
         # require("pROC")
         if (length(labels) != length(expr_mat[1, ])) {
@@ -144,9 +144,15 @@ complex_markers <- function (expr_mat, labels, n_max=length(unique(labels))-1, s
 	}
         out_matrix[,1] = as.numeric(as.character(out_matrix[,1]))
         out_matrix[,3] = as.numeric(as.character(out_matrix[,3]))
-	# Apply bonferroni (-ish) correction
-	# considers number of groups & number of genes, but not all possible combinations of groups
-        out_matrix$q.value = out_matrix$p.value*length(unique(labels))*length(expr_mat[,1]);
+	if (strict_BON) {
+		# Apply Bonferroni correction
+		n_possible_group_combos <- choose(length(unique(labels)), n_max)
+	} else {
+		# Apply bonferroni (-ish) correction
+		# considers number of groups & number of genes, but not all possible combinations of groups
+		n_possible_group_combos <- length(unique(labels));
+	}
+        out_matrix$q.value = out_matrix$p.value*n_possible_group_combos*length(expr_mat[,1]);
         out_matrix$q.value[out_matrix$q.value < 0] = -1;
         out_matrix$q.value[out_matrix$q.value > 1] = 1;
         return(out_matrix);
